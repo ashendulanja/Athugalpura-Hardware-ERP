@@ -1,0 +1,10 @@
+{
+  "name": "Hardware ERP",
+  "short_name": "Hardware ERP",
+  "description": "Hardware retail ERP, POS, inventory, purchasing and management control.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#0b1220",
+  "icons": [{"src":"./assets/logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
