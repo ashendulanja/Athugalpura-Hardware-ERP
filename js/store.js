@@ -9,14 +9,14 @@ const day = (offset = 0) => {
 
 export const permissionsByRole = {
   super_admin: ['*'],
-  shop_admin: ['dashboard','sales','products','inventory','purchasing','customers','suppliers','delivery','warranty','finance','reports','bulk','users','settings','approvals'],
-  manager: ['dashboard','sales','products','inventory','purchasing','customers','suppliers','delivery','warranty','reports','approvals'],
-  cashier: ['dashboard','sales','products','customers'],
-  sales: ['dashboard','sales','products','customers','reports'],
-  stores: ['dashboard','products','inventory','purchasing','delivery'],
+  shop_admin: ['dashboard','sales','invoices','quotations','orders','barcode','products','inventory','purchasing','customers','suppliers','delivery','warranty','finance','reports','bulk','users','settings','approvals'],
+  manager: ['dashboard','sales','invoices','quotations','orders','barcode','products','inventory','purchasing','customers','suppliers','delivery','warranty','reports','approvals'],
+  cashier: ['dashboard','sales','invoices','quotations','barcode','products','customers'],
+  sales: ['dashboard','sales','invoices','quotations','orders','barcode','products','customers','reports'],
+  stores: ['dashboard','barcode','products','inventory','purchasing','delivery'],
   accounts: ['dashboard','customers','suppliers','finance','reports'],
   delivery: ['dashboard','delivery'],
-  auditor: ['dashboard','products','inventory','purchasing','customers','suppliers','delivery','warranty','finance','reports']
+  auditor: ['dashboard','invoices','products','inventory','purchasing','customers','suppliers','delivery','warranty','finance','reports']
 };
 
 function seed() {
@@ -59,8 +59,8 @@ function seed() {
       { id:'s3', tenantId:'tenant-demo', code:'SUP-003', name:'BuildMart Agencies', phone:'077 200 1144', contact:'Fazal', terms:21, payable:188900, lastPurchase:day(-8), status:'active' }
     ],
     sales: [
-      { id:'INV-2609-0142', tenantId:'tenant-demo', date:day(0), customer:'Walk-in Customer', total:48750, cost:37120, payment:'Cash', status:'paid', user:'Sachini Fernando' },
-      { id:'INV-2609-0141', tenantId:'tenant-demo', date:day(0), customer:'Sunrise Construction (Pvt) Ltd', total:129800, cost:104400, payment:'Credit', status:'credit', user:'Nimesh Perera' },
+      { id:'INV-2609-0142', tenantId:'tenant-demo', date:day(0), customer:'Walk-in Customer', subtotal:48750, discount:0, tax:0, total:48750, cost:37120, paid:48750, payment:'Cash', status:'paid', user:'Sachini Fernando', lines:[{productId:'p3',sku:'TLS-DRL-BOS-13',name:'Bosch GSB 13 RE Impact Drill',baseUom:'PCS',qty:2,price:22900,avgCost:17800},{productId:'p8',sku:'SAF-GLV-NIT-L',name:'Nitrile Coated Work Gloves — L',baseUom:'PAIR',qty:7,price:421.43,avgCost:217.14}] },
+      { id:'INV-2609-0141', tenantId:'tenant-demo', date:day(0), customer:'Sunrise Construction (Pvt) Ltd', subtotal:129800, discount:0, tax:0, total:129800, cost:104400, paid:0, payment:'Credit', status:'credit', user:'Nimesh Perera', lines:[{productId:'p6',sku:'BLD-CEM-INSEE-50',name:'INSEE Sanstha Cement 50kg',baseUom:'BAG',qty:60,price:2090,avgCost:1920},{productId:'p4',sku:'FST-SCR-2IN-100',name:'Wood Screw 2” — Box 100',baseUom:'PCS',qty:676,price:6.51,avgCost:3.8}] },
       { id:'INV-2609-0139', tenantId:'tenant-demo', date:day(-1), customer:'M.R. Electricals', total:86500, cost:68950, payment:'Bank', status:'paid', user:'Nimesh Perera' },
       { id:'INV-2609-0135', tenantId:'tenant-demo', date:day(-2), customer:'Walk-in Customer', total:32600, cost:24900, payment:'Card', status:'paid', user:'Sachini Fernando' },
       { id:'INV-2609-0128', tenantId:'tenant-demo', date:day(-3), customer:'Lakmini Homes', total:116000, cost:90750, payment:'Credit', status:'partial', user:'Nimesh Perera' }
@@ -75,6 +75,7 @@ function seed() {
       { id:'QT-2609-0081', tenantId:'tenant-demo', customer:'Lakmini Homes', date:day(-2), validity:day(12), amount:212800, status:'accepted' },
       { id:'QT-2609-0076', tenantId:'tenant-demo', customer:'M.R. Electricals', date:day(-5), validity:day(9), amount:98500, status:'draft' }
     ],
+    salesOrders: [],
     deliveries: [
       { id:'DEL-2609-023', tenantId:'tenant-demo', date:day(0), customer:'Sunrise Construction (Pvt) Ltd', site:'Mawathagama Site', vehicle:'WP CAD-4812', driver:'Ruwan', status:'out_for_delivery', packages:18 },
       { id:'DEL-2609-022', tenantId:'tenant-demo', date:day(0), customer:'Lakmini Homes', site:'Kurunegala', vehicle:'NW BEE-2291', driver:'Dinesh', status:'ready', packages:7 },
@@ -84,16 +85,23 @@ function seed() {
       { id:'WC-2609-019', tenantId:'tenant-demo', serial:'BOS13RE-442190', product:'Bosch GSB 13 RE Impact Drill', customer:'Lakmini Homes', received:day(-3), status:'testing', note:'Intermittent power loss' },
       { id:'WC-2609-011', tenantId:'tenant-demo', serial:'PMP90-81200', product:'Water Pump 0.5HP', customer:'Sunrise Construction (Pvt) Ltd', received:day(-9), status:'supplier', note:'Motor overheating' }
     ],
+    receipts: [],
+    supplierPayments: [],
+    cheques: [],
+    cashShifts: [],
     expenses: [
       { id:'EXP-0091', tenantId:'tenant-demo', date:day(0), category:'Transport', description:'Local delivery fuel', amount:9800, status:'approved' },
       { id:'EXP-0089', tenantId:'tenant-demo', date:day(-1), category:'Loading', description:'Cement unloading labour', amount:6500, status:'approved' },
       { id:'EXP-0084', tenantId:'tenant-demo', date:day(-2), category:'Repairs', description:'Forklift service', amount:28500, status:'pending' }
     ],
+    returns: [],
+    grns: [],
+    stockCounts: [],
     stockMovements: [
-      { id:'SM-1001', tenantId:'tenant-demo', date:day(0), sku:'ELE-CAB-25-BLK', type:'Sale', qty:-17.5, ref:'INV-2609-0142', user:'Sachini Fernando' },
-      { id:'SM-1002', tenantId:'tenant-demo', date:day(0), sku:'FST-SCR-2IN-100', type:'Sale', qty:-100, ref:'INV-2609-0142', user:'Sachini Fernando' },
-      { id:'SM-1003', tenantId:'tenant-demo', date:day(-1), sku:'BLD-CEM-INSEE-50', type:'GRN', qty:100, ref:'GRN-2609-0031', user:'Dilshan Silva' },
-      { id:'SM-1004', tenantId:'tenant-demo', date:day(-1), sku:'PLB-TAP-ANG-12', type:'Adjustment', qty:-2, ref:'ADJ-2609-0012', user:'Dilshan Silva' }
+      { id:'SM-1001', tenantId:'tenant-demo', date:day(0), sku:'ELE-CAB-25-BLK', type:'Sale', qty:-17.5, ref:'INV-2609-0142', warehouse:'Main Warehouse', user:'Sachini Fernando' },
+      { id:'SM-1002', tenantId:'tenant-demo', date:day(0), sku:'FST-SCR-2IN-100', type:'Sale', qty:-100, ref:'INV-2609-0142', warehouse:'Main Warehouse', user:'Sachini Fernando' },
+      { id:'SM-1003', tenantId:'tenant-demo', date:day(-1), sku:'BLD-CEM-INSEE-50', type:'GRN', qty:100, ref:'GRN-2609-0031', warehouse:'Yard', user:'Dilshan Silva' },
+      { id:'SM-1004', tenantId:'tenant-demo', date:day(-1), sku:'PLB-TAP-ANG-12', type:'Adjustment', qty:-2, ref:'ADJ-2609-0012', warehouse:'Showroom', user:'Dilshan Silva' }
     ],
     auditLogs: [
       { id:'AL-1', tenantId:'tenant-demo', at:now(), user:'System Super Admin', action:'LOGIN', entity:'Session', detail:'Signed in to Super Admin dashboard' },
@@ -106,19 +114,45 @@ function seed() {
       { id:'n3', tenantId:'tenant-demo', type:'info', title:'Credit follow-up', body:'Sunrise Construction has Rs. 328,500 outstanding.', read:false }
     ],
     settings: {
-      'tenant-demo': { currency:'LKR', vatRate:18, ssclRate:2.5, taxRegistered:false, negativeStock:false, discountApproval:10, belowCostApproval:true, theme:'midnight' }
+      'tenant-demo': { currency:'LKR', vatRate:18, ssclRate:2.5, taxRegistered:false, negativeStock:false, discountApproval:10, belowCostApproval:true, theme:'dark', posPaper:'80', invoiceFooter:'Thank you for your business.', invoiceTerms:'Goods sold are subject to store return and warranty policies.', documentBusinessName:'', documentAddress:'', documentPhone:'', documentEmail:'', documentBRN:'', documentVAT:'', barcodeDefaultSize:'50x25' }
     }
   };
+}
+
+function normalizeState(state) {
+  state.meta ||= {version:1,createdAt:now(),lastSavedAt:now()};
+  state.returns ||= []; state.grns ||= []; state.stockCounts ||= []; state.salesOrders ||= []; state.receipts ||= []; state.supplierPayments ||= []; state.cheques ||= []; state.cashShifts ||= [];
+  state.sales ||= []; state.products ||= []; state.settings ||= {};
+  for (const sale of state.sales) {
+    sale.lines ||= [];
+    sale.subtotal = Number(sale.subtotal ?? sale.total ?? 0);
+    sale.discount = Number(sale.discount ?? 0);
+    sale.tax = Number(sale.tax ?? 0);
+    sale.paid = Number(sale.paid ?? (sale.status==='paid' ? sale.total : 0));
+  }
+  for (const sh of state.shops||[]) {
+    const st = state.settings[sh.id] ||= {};
+    Object.assign(st, {
+      currency: st.currency || 'LKR', vatRate:Number(st.vatRate ?? 18), ssclRate:Number(st.ssclRate ?? 2.5),
+      taxRegistered:!!st.taxRegistered, negativeStock:!!st.negativeStock, discountApproval:Number(st.discountApproval ?? 10),
+      belowCostApproval: st.belowCostApproval !== false, theme:st.theme || 'dark', posPaper:String(st.posPaper||'80'),
+      invoiceFooter:st.invoiceFooter || 'Thank you for your business.', invoiceTerms:st.invoiceTerms || '',
+      documentBusinessName:st.documentBusinessName || '', documentAddress:st.documentAddress || '', documentPhone:st.documentPhone || '',
+      documentEmail:st.documentEmail || '', documentBRN:st.documentBRN || '', documentVAT:st.documentVAT || '',
+      barcodeDefaultSize:st.barcodeDefaultSize || '50x25'
+    });
+  }
+  return state;
 }
 
 export function loadState() {
   try {
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (existing?.meta?.version === 1) return existing;
+    if (existing?.meta?.version === 1) return normalizeState(existing);
   } catch (_) {}
   const initial = seed();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-  return initial;
+  return normalizeState(initial);
 }
 
 export function saveState(state) {

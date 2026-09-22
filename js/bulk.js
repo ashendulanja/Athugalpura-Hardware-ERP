@@ -1,8 +1,8 @@
 export const bulkDefinitions = {
   products: {
     label:'New / Update Products', key:'sku', collection:'products',
-    columns:['SKU*','Barcode','Item Name*','Category','Brand','Base UOM','Purchase UOM','Conversion','Avg Cost','Retail Price','Trade Price','Wholesale Price','Minimum Price','Opening Stock','Reorder Level','Warehouse','Rack'],
-    map:{'SKU*':'sku','Barcode':'barcode','Item Name*':'name','Category':'category','Brand':'brand','Base UOM':'baseUom','Purchase UOM':'purchaseUom','Conversion':'conversion','Avg Cost':'avgCost','Retail Price':'retail','Trade Price':'trade','Wholesale Price':'wholesale','Minimum Price':'minPrice','Opening Stock':'stock','Reorder Level':'reorder','Warehouse':'warehouse','Rack':'rack'}
+    columns:['SKU*','Barcode','Item Name*','Category','Brand','Model','Manufacturer','Country','Aliases','Specification','Base UOM','Purchase UOM','Conversion','Avg Cost','Retail Price','Trade Price','Wholesale Price','Minimum Price','Opening Stock','Reorder Level','Max Stock','Reorder Qty','Warehouse','Rack'],
+    map:{'SKU*':'sku','Barcode':'barcode','Item Name*':'name','Category':'category','Brand':'brand','Model':'model','Manufacturer':'manufacturer','Country':'country','Aliases':'aliases','Specification':'specification','Base UOM':'baseUom','Purchase UOM':'purchaseUom','Conversion':'conversion','Avg Cost':'avgCost','Retail Price':'retail','Trade Price':'trade','Wholesale Price':'wholesale','Minimum Price':'minPrice','Opening Stock':'stock','Reorder Level':'reorder','Max Stock':'maxStock','Reorder Qty':'reorderQty','Warehouse':'warehouse','Rack':'rack'}
   },
   prices: {
     label:'Selling Price Update', key:'sku', collection:'products',
@@ -34,7 +34,7 @@ export const bulkDefinitions = {
 const cleanHeader = h => String(h || '').trim().toLowerCase().replace(/[\s_*./()-]+/g,'');
 const aliases = {
   sku:['sku','itemcode','productcode','code'], barcode:['barcode','ean'], name:['itemname','productname','name','customername','suppliername'],
-  category:['category'], brand:['brand'], baseUom:['baseuom','uom','unit'], purchaseUom:['purchaseuom','purchaseunit'], conversion:['conversion','unitconversion'],
+  category:['category'], brand:['brand'], model:['model'], manufacturer:['manufacturer','maker'], country:['country','origin'], aliases:['aliases','alias','searchaliases'], specification:['specification','spec','description'], maxStock:['maxstock'], reorderQty:['reorderqty','reorderquantity'], baseUom:['baseuom','uom','unit'], purchaseUom:['purchaseuom','purchaseunit'], conversion:['conversion','unitconversion'],
   avgCost:['avgcost','cost','averagecost'], retail:['retailprice','sellingprice','retail'], trade:['tradeprice','trade'], wholesale:['wholesaleprice','wholesale'], minPrice:['minimumprice','minprice'],
   stock:['openingstock','stock'], reorder:['reorderlevel','reorder'], warehouse:['warehouse','location'], rack:['rack','bin','rackbin'], adjustmentQty:['adjustmentqty','qty','quantity','adjustment'],
   reason:['reason','adjustmentreason'], openingStock:['openingstock','stockqty'], code:['customercode','suppliercode','code'], type:['type','customertype'], phone:['phone','mobile','contactno'],
@@ -79,7 +79,7 @@ export function validateRows(items, type, state, tenantId) {
     const existing = current.find(x => String(x[def.key]).toLowerCase() === String(key).toLowerCase());
     if (['prices','stock','opening'].includes(type) && !existing) errors.push('Item not found');
     if (type === 'products' && existing) warnings.push('Existing item will be updated');
-    if (['retail','trade','wholesale','minPrice','avgCost','stock','reorder','conversion','adjustmentQty','openingStock','creditLimit','creditDays','terms'].some(k => row[k] !== undefined && row[k] !== '' && Number.isNaN(Number(row[k])))) {
+    if (['retail','trade','wholesale','minPrice','avgCost','stock','reorder','maxStock','reorderQty','conversion','adjustmentQty','openingStock','creditLimit','creditDays','terms'].some(k => row[k] !== undefined && row[k] !== '' && Number.isNaN(Number(row[k])))) {
       errors.push('One or more numeric values are invalid');
     }
     if (type === 'prices' && existing && row.retail !== '' && Number(row.retail) < Number(existing.avgCost || 0)) warnings.push('Retail price is below average cost');
@@ -97,7 +97,7 @@ export function applyRows(rows, type, state, tenantId, userName) {
       const out = {};
       Object.keys(obj).forEach(k => {
         if (k.startsWith('__')) return;
-        if (['conversion','avgCost','retail','trade','wholesale','minPrice','stock','reorder','adjustmentQty','openingStock','creditLimit','creditDays','terms'].includes(k)) out[k] = obj[k] === '' ? 0 : Number(obj[k]);
+        if (['conversion','avgCost','retail','trade','wholesale','minPrice','stock','reorder','maxStock','reorderQty','adjustmentQty','openingStock','creditLimit','creditDays','terms'].includes(k)) out[k] = obj[k] === '' ? 0 : Number(obj[k]);
         else out[k] = obj[k];
       });
       return out;
@@ -106,23 +106,23 @@ export function applyRows(rows, type, state, tenantId, userName) {
     if (type === 'stock' && existing) {
       const before = Number(existing.stock || 0); const qty = Number(clean.adjustmentQty || 0);
       existing.stock = before + qty;
-      state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Bulk Adjustment', qty, ref:`BULK-${Date.now()}`, user:userName });
+      state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Bulk Adjustment', qty, ref:`BULK-${Date.now()}`, warehouse:clean.warehouse||existing.warehouse||'Main Warehouse', user:userName });
     } else if (type === 'opening' && existing) {
       const before = Number(existing.stock || 0); const after = Number(clean.openingStock || 0);
       existing.stock = after;
       if (clean.warehouse) existing.warehouse = clean.warehouse;
       if (clean.rack) existing.rack = clean.rack;
-      state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Opening Balance', qty:after-before, ref:`OPEN-${Date.now()}`, user:userName });
+      state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Opening Balance', qty:after-before, ref:`OPEN-${Date.now()}`, warehouse:clean.warehouse||existing.warehouse||'Main Warehouse', user:userName });
     } else if (existing) {
       if (type === 'products' && clean.stock !== undefined && clean.stock !== '') {
         const before = Number(existing.stock || 0); const after = Number(clean.stock || 0); const delta = after - before;
-        if (delta) state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Bulk Opening/Correction', qty:delta, ref:`BULK-${Date.now()}`, user:userName });
+        if (delta) state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:existing.sku, type:'Bulk Opening/Correction', qty:delta, ref:`BULK-${Date.now()}`, warehouse:clean.warehouse||existing.warehouse||'Main Warehouse', user:userName });
       }
       Object.assign(existing, clean);
     } else {
       const created = { id:`${def.collection.slice(0,1)}-${Date.now()}-${changed}`, tenantId, status:'active', outstanding:0, payable:0, ...clean };
       collection.unshift(created);
-      if (type === 'products' && Number(clean.stock || 0)) state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:clean.sku, type:'Opening Balance', qty:Number(clean.stock), ref:`OPEN-${Date.now()}`, user:userName });
+      if (type === 'products' && Number(clean.stock || 0)) state.stockMovements.unshift({ id:`SM-${Date.now()}-${changed}`, tenantId, date:new Date().toISOString().slice(0,10), sku:clean.sku, type:'Opening Balance', qty:Number(clean.stock), ref:`OPEN-${Date.now()}`, warehouse:clean.warehouse||'Main Warehouse', user:userName });
     }
     changed++;
   });
@@ -134,7 +134,7 @@ export function downloadTemplate(type) {
   const def = bulkDefinitions[type];
   const sample = def.columns.map(c => {
     const k = def.map[c];
-    const samples = {sku:'HWD-0001',barcode:'479000000001',name:'Sample Hardware Item',category:'Electrical',brand:'Brand',baseUom:'PCS',purchaseUom:'BOX',conversion:10,avgCost:100,retail:150,trade:140,wholesale:130,minPrice:120,stock:50,reorder:10,warehouse:'Main Warehouse',rack:'A01-B02',adjustmentQty:5,reason:'Count correction',openingStock:50,code:type==='customers'?'CUS-0001':'SUP-0001',type:'Contractor',phone:'0771234567',email:'name@example.com',creditLimit:100000,creditDays:30,priceGroup:'Trade',contact:'Contact Person',terms:30};
+    const samples = {sku:'HWD-0001',barcode:'479000000001',name:'Sample Hardware Item',category:'Electrical',brand:'Brand',model:'Model X',manufacturer:'Manufacturer',country:'Sri Lanka',aliases:'sample,item',specification:'Sample specification',maxStock:100,reorderQty:25,baseUom:'PCS',purchaseUom:'BOX',conversion:10,avgCost:100,retail:150,trade:140,wholesale:130,minPrice:120,stock:50,reorder:10,warehouse:'Main Warehouse',rack:'A01-B02',adjustmentQty:5,reason:'Count correction',openingStock:50,code:type==='customers'?'CUS-0001':'SUP-0001',type:'Contractor',phone:'0771234567',email:'name@example.com',creditLimit:100000,creditDays:30,priceGroup:'Trade',contact:'Contact Person',terms:30};
     return samples[k] ?? '';
   });
   if (window.XLSX) {
